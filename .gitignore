@@ -129,3 +129,7 @@ dmypy.json
 .pyre/
 
 .idea
+.aws
+.terraform.d
+.terraform
+tfplan
