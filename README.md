@@ -2,7 +2,8 @@
 Calculate statistics on GIBS hosted imagery
 
 ## Initial Implementation Use Cases & Exchange Data Specification
- ### 1. Imagery Spatial Summary Statistics – single (current) Time Step. 
+
+### 1. Imagery Spatial Summary Statistics – single (current) Time Step. 
 **Input Parameters** (from Worldview UI passed to Imagery Analysis tool for execution):
 - Spatial Bounding Box: Lat_min, Lat_max, Lon_min, Lon_max  (in -90 to 90, -180 to 180 format)
 - Time range: Time_min, Time_max (to keep this general, but for this particular use case just the current time step from the Worldview data picker will be passed into Imagery Analysis tool for imagery value extraction and analysis.  ie. Time_min = Time_max
