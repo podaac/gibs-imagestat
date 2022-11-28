@@ -133,3 +133,5 @@ dmypy.json
 .terraform.d
 .terraform
 tfplan
+
+.bash_history
