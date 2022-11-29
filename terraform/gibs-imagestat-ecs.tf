@@ -86,7 +86,7 @@ data "template_file" "instance_user_data" {
 resource "aws_launch_template" "imagestat" {
   name_prefix   = local.ec2_resources_name
   image_id      = data.aws_ssm_parameter.image_id_ecs_amz2.value
-  instance_type = "t2.micro"
+  instance_type = "t3.medium"
   user_data = base64encode(data.template_file.instance_user_data.rendered)
 
   iam_instance_profile {
@@ -111,6 +111,7 @@ resource "aws_ecs_service" "gibs_imagestat" {
   cluster         = aws_ecs_cluster.imagestat.id
   task_definition = aws_ecs_task_definition.imagestat.arn
   desired_count   = 1
+
   capacity_provider_strategy {
     capacity_provider = aws_ecs_capacity_provider.imagestat.name
     weight = 1

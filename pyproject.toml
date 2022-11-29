@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gibs-imagestat"
-version = "0.1.0"
+version = "0.2.0-alpha.0"
 description = "Application capable of computing statistics on GIBS images"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]
 license = "Apache-2.0"
@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/podaac/gibs-imagestat"
 exclude = ['contrib', 'docs', 'tests']
 packages = [
-    { include = "dag" },
+    { include = "imagestat" },
 ]
 
 [tool.poetry.dependencies]
@@ -19,10 +19,10 @@ requests = "^2.27.1"
 numpy = "^1.22.2"
 pandas = "^1.4.1"
 beautifulsoup4 = "^4.10.0"
-starlette = "^0.21"
+starlette = "^0.22"
 xarray = "^2022.3.0"
-fastapi = "^0.87"
-uvicorn = "^0.19"
+fastapi = "^0.88"
+uvicorn = "^0.20"
 lxml = "^4.9.1"
 
 [tool.poetry.dev-dependencies]
