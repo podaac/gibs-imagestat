@@ -5,6 +5,10 @@ on:
   # Triggers the workflow on push events
   push:
     branches: [ develop, release/**, main, feature/** ]
+    tags-ignore:
+      - '*'
+    paths-ignore:
+      - 'pyproject.toml'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
