@@ -34,11 +34,11 @@ jobs:
         with:
           repository: ${{ github.repository }}
           token: ${{ steps.podaac-cicd.outputs.token }}
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v2.0.0
+        uses: abatilo/actions-poetry@v2
         with:
           poetry-version: 1.1.8
       - name: Get version
@@ -124,7 +124,7 @@ jobs:
       - name: Build Python Artifact
         run: |
           poetry build
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: python-artifact
           path: dist/*
@@ -194,4 +194,4 @@ jobs:
         if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: ./
+          sarif_file: ./docker.sarif
