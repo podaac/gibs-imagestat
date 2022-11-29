@@ -1,1 +1,3 @@
-__version__ = '0.1.0'
+"""
+Simple web service for calculating statistics on GIBS hosted imagery
+"""

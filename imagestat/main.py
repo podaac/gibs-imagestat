@@ -1,3 +1,6 @@
+"""
+Can be used to run the service locally.
+"""
 import uvicorn
 
 if __name__ == "__main__":
