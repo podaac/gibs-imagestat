@@ -176,22 +176,3 @@ jobs:
           pull: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-      - name: Run Snyk on Docker Image
-        if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
-        # Snyk can be used to break the build when it detects vulnerabilities.
-        # In this case we want to upload the issues to GitHub Code Scanning
-        continue-on-error: true
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.software_version }}
-          args: >
-            --severity-threshold=high
-            --file=./docker/Dockerfile
-            --sarif-file-output=docker.sarif
-      - name: Upload result to GitHub Code Scanning
-        if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: ./docker.sarif
