@@ -1,4 +1,5 @@
 import datetime
+import json
 import re
 from datetime import datetime
 
@@ -96,10 +97,6 @@ def gibs(timestamp, layer, colormap, bbox, bins):
     return stats
 
 
-# CYGNSS_L3_CDR_V1.1
-# GHRSST_L4_MUR_Sea_Surface_Temperature
-# GHRSST_L4_MUR25_Sea_Ice_Concentration
-# http://ec2-3-65-18-201.eu-central-1.compute.amazonaws.com:8080/get_stats?minx=-160&miny=-5&maxx=-150&maxy=0&timestamp=2016-06-09T00:00:00Z&format=json
 @app.get("/get_stats", tags=["Home"])
 def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', steps: int = 1,
               layer='GHRSST_L4_MUR_Sea_Surface_Temperature', colormap='GHRSST_Sea_Surface_Temperature.xml', _scale=1,
@@ -111,7 +108,7 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
             return f"Invalid time range {err}"
         re = {}
         for day in days:
-            re[day] = gibs(str(day), str(_scale), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
+            re[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
 
         stats = {}
         raws = [re[i]['raw'] for i in days]
@@ -161,4 +158,11 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
         stats["raw"] = list(raw)
         return stats
 
-    return gibs(str(timestamp), str(_scale), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
+    return gibs(str(timestamp), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
+
+
+@app.get("/health", tags=["Health"])
+def health_check():
+    return {
+        "status": "ok"
+    }

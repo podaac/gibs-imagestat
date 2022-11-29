@@ -2,7 +2,11 @@
 resource "aws_iam_instance_profile" "imagestat" {
   name = "${local.ec2_resources_name}-instance-profile"
   role = aws_iam_role.imagestat_instance_role.name
-  tags = local.default_tags
+
+  # Bug in NGAP, NGAPShApplicationDeveloper is not authorized to perform: iam:TagInstanceProfile
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "aws_iam_role" "imagestat_instance_role" {

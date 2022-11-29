@@ -39,6 +39,9 @@ resource "aws_lb_target_group" "imagestat" {
   port = 80
   target_type = "ip"
   protocol = "HTTP"
+  health_check {
+    path = "/health"
+  }
 }
 
 resource "aws_alb_listener" "imagestat" {
