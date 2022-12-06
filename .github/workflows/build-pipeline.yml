@@ -48,7 +48,10 @@ jobs:
           echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
       - name: Bump pre-alpha version
         # If triggered by push to a feature branch
-        if: ${{ startsWith(github.ref, 'refs/heads/feature/') }}
+        if: |
+          startsWith(github.ref, 'refs/heads/feature') ||
+          startsWith(github.ref, 'refs/heads/issue')     ||
+          startsWith(github.ref, 'refs/heads/dependabot')
         run: |
           new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
           poetry version $new_ver
@@ -144,14 +147,20 @@ jobs:
         run: |
           poetry publish
       - name: Log in to the Container registry
-        if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
+        if: |
+          startsWith(github.ref, 'refs/heads/feature') ||
+          startsWith(github.ref, 'refs/heads/issue')     ||
+          startsWith(github.ref, 'refs/heads/dependabot')
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata (tags, labels) for Docker
-        if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
+        if: |
+          startsWith(github.ref, 'refs/heads/feature') ||
+          startsWith(github.ref, 'refs/heads/issue')     ||
+          startsWith(github.ref, 'refs/heads/dependabot')
         id: meta
         uses: docker/metadata-action@v4
         with:
@@ -160,12 +169,18 @@ jobs:
             type=semver,pattern={{version}},value=${{ env.software_version }}
             type=raw,value=${{ env.venue }}
       - name: Wait for package
-        if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
+        if: |
+          startsWith(github.ref, 'refs/heads/feature') ||
+          startsWith(github.ref, 'refs/heads/issue')     ||
+          startsWith(github.ref, 'refs/heads/dependabot')
         run: |
           pip install tenacity
           ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}==${{ env.software_version }}
       - name: Build and push Docker image
-        if: ${{ !startsWith(github.ref, 'refs/heads/feature') }}
+        if: |
+          startsWith(github.ref, 'refs/heads/feature') ||
+          startsWith(github.ref, 'refs/heads/issue')     ||
+          startsWith(github.ref, 'refs/heads/dependabot')
         uses: docker/build-push-action@v3
         with:
           context: .
