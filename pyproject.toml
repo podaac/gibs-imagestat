@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gibs-imagestat"
-version = "0.2.0-alpha.20"
+version = "0.2.0-alpha.22"
 description = "Application capable of computing statistics on GIBS images"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]
 license = "Apache-2.0"

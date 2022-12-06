@@ -44,7 +44,7 @@ jobs:
       - name: Get version
         id: get-version
         run: |
-          echo "current_version=$(poetry version | awk '{print $2}')" >> $GITHUB_STATE
+          echo "current_version=$(poetry version | awk '{print $2}')" >> $GITHUB_OUTPUT
           echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
       - name: Bump pre-alpha version
         # If triggered by push to a feature branch
@@ -132,6 +132,7 @@ jobs:
           name: python-artifact
           path: dist/*
       - name: Publish to test.pypi.org
+        id: pypi-test-publish
         if: |
           github.ref == 'refs/heads/develop' ||
           startsWith(github.ref, 'refs/heads/release')
@@ -140,7 +141,9 @@ jobs:
         run: |
           poetry config repositories.testpypi https://test.pypi.org/legacy/
           poetry publish -r testpypi
+          echo "PACKAGE=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
       - name: Publish to pypi.org
+        id: pypi-publish
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
@@ -148,9 +151,8 @@ jobs:
           poetry publish
       - name: Log in to the Container registry
         if: |
-          startsWith(github.ref, 'refs/heads/feature') ||
-          startsWith(github.ref, 'refs/heads/issue')     ||
-          startsWith(github.ref, 'refs/heads/dependabot')
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
@@ -158,9 +160,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata (tags, labels) for Docker
         if: |
-          startsWith(github.ref, 'refs/heads/feature') ||
-          startsWith(github.ref, 'refs/heads/issue')     ||
-          startsWith(github.ref, 'refs/heads/dependabot')
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
         id: meta
         uses: docker/metadata-action@v4
         with:
@@ -170,17 +171,15 @@ jobs:
             type=raw,value=${{ env.venue }}
       - name: Wait for package
         if: |
-          startsWith(github.ref, 'refs/heads/feature') ||
-          startsWith(github.ref, 'refs/heads/issue')     ||
-          startsWith(github.ref, 'refs/heads/dependabot')
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
         run: |
           pip install tenacity
           ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}==${{ env.software_version }}
       - name: Build and push Docker image
         if: |
-          startsWith(github.ref, 'refs/heads/feature') ||
-          startsWith(github.ref, 'refs/heads/issue')     ||
-          startsWith(github.ref, 'refs/heads/dependabot')
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
         uses: docker/build-push-action@v3
         with:
           context: .
