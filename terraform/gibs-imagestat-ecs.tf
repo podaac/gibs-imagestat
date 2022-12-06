@@ -1,7 +1,6 @@
 
 resource "aws_ecs_cluster" "imagestat" {
   name = "${local.ec2_resources_name}-cluster"
-  tags = local.default_tags
 
   configuration {
     execute_command_configuration {
@@ -19,12 +18,10 @@ resource "aws_ecs_cluster" "imagestat" {
 resource "aws_kms_key" "imagestat_kms_key" {
   description             = "${local.ec2_resources_name}-kms-key"
   deletion_window_in_days = 7
-  tags = local.default_tags
 }
 
 resource "aws_cloudwatch_log_group" "imagestat_log_group" {
   name = "${local.ec2_resources_name}-log-group"
-  tags = local.default_tags
 }
 
 resource "aws_ecs_cluster_capacity_providers" "imagestat" {
@@ -40,7 +37,6 @@ resource "aws_ecs_cluster_capacity_providers" "imagestat" {
 
 resource "aws_ecs_capacity_provider" "imagestat" {
   name = "${local.ec2_resources_name}-capacity-provider"
-  tags = local.default_tags
 
   auto_scaling_group_provider {
     auto_scaling_group_arn = aws_autoscaling_group.imagestat.arn
@@ -93,7 +89,6 @@ resource "aws_launch_template" "imagestat" {
     arn = aws_iam_instance_profile.imagestat.arn
   }
   vpc_security_group_ids = [aws_security_group.imagestat_alb.id]
-  tags = local.default_tags
 
   tag_specifications {
     resource_type = "instance"
@@ -116,7 +111,6 @@ resource "aws_ecs_service" "gibs_imagestat" {
     capacity_provider = aws_ecs_capacity_provider.imagestat.name
     weight = 1
   }
-  tags = local.default_tags
 
   network_configuration {
     subnets = data.aws_subnets.private_application_subnets.ids
@@ -149,7 +143,6 @@ resource "aws_ecs_task_definition" "imagestat" {
   execution_role_arn = aws_iam_role.imagestat_task_execution_role.arn
   task_role_arn = aws_iam_role.imagestat_task_role.arn
   network_mode = "awsvpc"
-  tags = local.default_tags
 
   container_definitions = jsonencode([
     {

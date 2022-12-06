@@ -4,11 +4,11 @@ resource "aws_security_group" "imagestat_alb" {
   vpc_id = data.aws_vpc.application_vpc.id
 
   ingress {
-    description      = "Allow HTTP traffic from self and VPC"
+    description      = "Allow HTTP traffic from anywhere"
     from_port        = 80
     to_port          = 80
     protocol         = "tcp"
-    cidr_blocks      = [data.aws_vpc.application_vpc.cidr_block]
+    cidr_blocks      = ["0.0.0.0/0"]
     self = true
   }
 
@@ -20,7 +20,6 @@ resource "aws_security_group" "imagestat_alb" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
-  tags = local.default_tags
 }
 
 resource "aws_lb" "imagestat" {
@@ -30,7 +29,6 @@ resource "aws_lb" "imagestat" {
   subnets = data.aws_subnets.private_application_subnets.ids
   enable_deletion_protection = true
 
-  tags = local.default_tags
 }
 
 resource "aws_lb_target_group" "imagestat" {
