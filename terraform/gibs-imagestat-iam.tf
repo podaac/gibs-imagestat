@@ -2,11 +2,6 @@
 resource "aws_iam_instance_profile" "imagestat" {
   name = "${local.ec2_resources_name}-instance-profile"
   role = aws_iam_role.imagestat_instance_role.name
-
-  # Bug in NGAP, NGAPShApplicationDeveloper is not authorized to perform: iam:TagInstanceProfile
-  lifecycle {
-    ignore_changes = [tags]
-  }
 }
 
 resource "aws_iam_role" "imagestat_instance_role" {
@@ -32,12 +27,10 @@ resource "aws_iam_role" "imagestat_instance_role" {
       ]
     }
   )
-  tags = local.default_tags
 }
 
 resource "aws_iam_role" "imagestat_task_role" {
   name_prefix = local.ec2_resources_name
-  tags        = local.default_tags
 
   permissions_boundary = "arn:aws:iam::${local.account_id}:policy/NGAPShRoleBoundary"
 
@@ -67,7 +60,6 @@ resource "aws_iam_role" "imagestat_task_role" {
 
 resource "aws_iam_role" "imagestat_task_execution_role" {
   name_prefix = local.ec2_resources_name
-  tags        = local.default_tags
 
   permissions_boundary = "arn:aws:iam::${local.account_id}:policy/NGAPShRoleBoundary"
 
