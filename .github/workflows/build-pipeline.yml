@@ -180,7 +180,7 @@ jobs:
         if: |
           steps.pypi-test-publish.conclusion == 'success' ||
           steps.pypi-publish.conclusion == 'success'
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: docker/Dockerfile
