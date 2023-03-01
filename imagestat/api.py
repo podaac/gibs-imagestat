@@ -1,16 +1,18 @@
 """
 Defines a FastAPI application and implements the get_stats endpoint
 """
+import logging
 import re
-from datetime import datetime
+import datetime
 
 import numpy as np
 import requests
 from PIL import Image
 from bs4 import BeautifulSoup
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
+LOGGER = logging.getLogger('imagestat')
 
 
 def flatten(list_to_flatten):
@@ -96,7 +98,7 @@ def gibs(timestamp, layer, colormap, bbox, bins):  # pylint: disable=too-many-lo
     colormap_url = f'https://gibs.earthdata.nasa.gov/colormaps/v1.3/{colormap.replace(".xml", "")}.xml'
 
     colormap_document = requests.get(colormap_url, timeout=500)
-    colormap_document_soup = BeautifulSoup(colormap_document.content, "lxml")
+    colormap_document_soup = BeautifulSoup(colormap_document.content, features="xml")
 
     colormap_entries = colormap_document_soup.find_all(re.compile("ColorMapEntry", re.IGNORECASE), {"value": True})
     color_entry_dict = {}
@@ -117,14 +119,19 @@ def gibs(timestamp, layer, colormap, bbox, bins):  # pylint: disable=too-many-lo
             raw.append(color_entry_dict[i])
         except KeyError:
             pass
-    mean_value = np.mean(raw)
-    min_value = 0
-    max_value = np.max(raw)
-    hist = np.histogram(raw, bins=bins)
-    stdev_value = np.std(raw)
-    median_value = np.median(raw)
-    stats = {"median": str(median_value), "mean": mean_value, "max": max_value, "min": min_value, "stdev": stdev_value,
-             "hist": [[str(j), str(i)] for i, j in zip(hist[0], hist[1])], "raw": list(raw)}
+    if raw:
+        mean_value = np.mean(raw)
+        min_value = 0
+        max_value = np.max(raw)
+        hist = np.histogram(raw, bins=bins)
+        stdev_value = np.std(raw)
+        median_value = np.median(raw)
+        stats = {"median": str(median_value), "mean": mean_value, "max": max_value, "min": min_value, "stdev": stdev_value,
+                 "hist": [[str(j), str(i)] for i, j in zip(hist[0], hist[1])], "raw": list(raw)}
+    else:
+        stats = {"median": 0, "mean": 0, "max": 0, "min": 0,
+                 "stdev": 0,
+                 "hist": [[str(j), str(i)] for i, j in zip([0], [0])], "raw": list()}
 
     return stats
 
@@ -151,8 +158,9 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
     if _type == 'range':
         try:
             days = datetime_range(timestamp, end_timestamp, int(str(steps).replace(',', '')))
-        except Exception as err:  # pylint: disable=broad-except
-            return f"Invalid time range {err}"
+        except ValueError as err:
+            LOGGER.warning("Invalid time range", err)
+            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}")
         results = {}
         for day in days:
             results[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
@@ -180,8 +188,9 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
     if _type == 'series':
         try:
             days = datetime_range(timestamp, end_timestamp, int(str(steps).replace(',', '')))
-        except Exception as err:  # pylint: disable=broad-except
-            return f"Invalid time range {err}"
+        except ValueError as err:
+            LOGGER.warning("Invalid time range", err)
+            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}")
         results = {}
         for day in days:
             results[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
@@ -194,15 +203,15 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
         min_value = {i: results[i]['min'] for i in days}
         max_value = {i: results[i]['max'] for i in days}
         stdev_value = {i: results[i]['stdev'] for i in days}
-        hist = np.histogram(raw, bins=int(bins))
+        # hist = np.histogram(raw, bins=int(bins))
         stats["mean"] = mean_value
         stats["median"] = median_value
         stats["max"] = max_value
         stats["min"] = min_value
         stats["stdev"] = stdev_value
         stats["stderr"] = str(np.std(raw) / np.sqrt(len(raw)))
-        stats["hist"] = [[str(j), str(i)] for i, j in zip(hist[0], hist[1])]
-        stats["raw"] = list(raw)
+        # stats["hist"] = [[str(j), str(i)] for i, j in zip(hist[0], hist[1])]
+        # stats["raw"] = list(raw)
         return stats
 
     return gibs(str(timestamp), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
