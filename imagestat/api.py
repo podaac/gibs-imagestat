@@ -202,15 +202,15 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
         min_value = {i: results[i]['min'] for i in days}
         max_value = {i: results[i]['max'] for i in days}
         stdev_value = {i: results[i]['stdev'] for i in days}
-        # hist = np.histogram(raw, bins=int(bins))
+        hist = np.histogram(raw, bins=int(bins))
         stats["mean"] = mean_value
         stats["median"] = median_value
         stats["max"] = max_value
         stats["min"] = min_value
         stats["stdev"] = stdev_value
         stats["stderr"] = str(np.std(raw) / np.sqrt(len(raw)))
-        # stats["hist"] = [[str(j), str(i)] for i, j in zip(hist[0], hist[1])]
-        # stats["raw"] = list(raw)
+        stats["hist"] = [[str(j), str(i)] for i, j in zip(hist[0], hist[1])]
+        stats["raw"] = list(raw)
         return stats
 
     return gibs(str(timestamp), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
