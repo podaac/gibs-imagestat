@@ -93,10 +93,11 @@ def gibs(timestamp, layer, colormap, bbox, bins):  # pylint: disable=too-many-lo
     wms_url = f'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap' \
               f'&BBOX={bbox}CRS=EPSG:4326&WIDTH={map_width}&HEIGHT={map_height}&LAYERS={layer}' \
               f'&STYLES=&FORMAT=image/png&TIME={timestamp}'
+    LOGGER.info("Query gibs for image: %s", wms_url)
     image = Image.open(requests.get(wms_url, stream=True, timeout=500).raw)
 
     colormap_url = f'https://gibs.earthdata.nasa.gov/colormaps/v1.3/{colormap.replace(".xml", "")}.xml'
-
+    LOGGER.info("Query gibs for colormap: %s", wms_url)
     colormap_document = requests.get(colormap_url, timeout=500)
     colormap_document_soup = BeautifulSoup(colormap_document.content, features="xml")
 
@@ -131,7 +132,7 @@ def gibs(timestamp, layer, colormap, bbox, bins):  # pylint: disable=too-many-lo
     else:
         stats = {"median": 0, "mean": 0, "max": 0, "min": 0,
                  "stdev": 0,
-                 "hist": [[str(j), str(i)] for i, j in zip([0], [0])], "raw": list()}
+                 "hist": [[str(j), str(i)] for i, j in zip([0], [0])], "raw": []}
 
     return stats
 
@@ -159,8 +160,7 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
         try:
             days = datetime_range(timestamp, end_timestamp, int(str(steps).replace(',', '')))
         except ValueError as err:
-            LOGGER.warning("Invalid time range", err)
-            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}")
+            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}") from err
         results = {}
         for day in days:
             results[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
@@ -189,8 +189,7 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
         try:
             days = datetime_range(timestamp, end_timestamp, int(str(steps).replace(',', '')))
         except ValueError as err:
-            LOGGER.warning("Invalid time range", err)
-            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}")
+            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}") from err
         results = {}
         for day in days:
             results[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
