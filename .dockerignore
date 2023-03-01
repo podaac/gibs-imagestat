@@ -1,0 +1,7 @@
+.git
+.aws
+.terraform.d
+terraform
+*.docx
+.idea
+jupyternotebook_test

@@ -1,16 +1,18 @@
 """
 Defines a FastAPI application and implements the get_stats endpoint
 """
+import logging
 import re
-from datetime import datetime
+import datetime
 
 import numpy as np
 import requests
 from PIL import Image
 from bs4 import BeautifulSoup
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
+LOGGER = logging.getLogger('imagestat')
 
 
 def flatten(list_to_flatten):
@@ -91,12 +93,13 @@ def gibs(timestamp, layer, colormap, bbox, bins):  # pylint: disable=too-many-lo
     wms_url = f'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap' \
               f'&BBOX={bbox}CRS=EPSG:4326&WIDTH={map_width}&HEIGHT={map_height}&LAYERS={layer}' \
               f'&STYLES=&FORMAT=image/png&TIME={timestamp}'
+    LOGGER.info("Query gibs for image: %s", wms_url)
     image = Image.open(requests.get(wms_url, stream=True, timeout=500).raw)
 
     colormap_url = f'https://gibs.earthdata.nasa.gov/colormaps/v1.3/{colormap.replace(".xml", "")}.xml'
-
+    LOGGER.info("Query gibs for colormap: %s", wms_url)
     colormap_document = requests.get(colormap_url, timeout=500)
-    colormap_document_soup = BeautifulSoup(colormap_document.content, "lxml")
+    colormap_document_soup = BeautifulSoup(colormap_document.content, features="xml")
 
     colormap_entries = colormap_document_soup.find_all(re.compile("ColorMapEntry", re.IGNORECASE), {"value": True})
     color_entry_dict = {}
@@ -117,14 +120,19 @@ def gibs(timestamp, layer, colormap, bbox, bins):  # pylint: disable=too-many-lo
             raw.append(color_entry_dict[i])
         except KeyError:
             pass
-    mean_value = np.mean(raw)
-    min_value = 0
-    max_value = np.max(raw)
-    hist = np.histogram(raw, bins=bins)
-    stdev_value = np.std(raw)
-    median_value = np.median(raw)
-    stats = {"median": str(median_value), "mean": mean_value, "max": max_value, "min": min_value, "stdev": stdev_value,
-             "hist": [[str(j), str(i)] for i, j in zip(hist[0], hist[1])], "raw": list(raw)}
+    if raw:
+        mean_value = np.mean(raw)
+        min_value = 0
+        max_value = np.max(raw)
+        hist = np.histogram(raw, bins=bins)
+        stdev_value = np.std(raw)
+        median_value = np.median(raw)
+        stats = {"median": str(median_value), "mean": mean_value, "max": max_value, "min": min_value, "stdev": stdev_value,
+                 "hist": [[str(j), str(i)] for i, j in zip(hist[0], hist[1])], "raw": list(raw)}
+    else:
+        stats = {"median": 0, "mean": 0, "max": 0, "min": 0,
+                 "stdev": 0,
+                 "hist": [[str(j), str(i)] for i, j in zip([0], [0])], "raw": []}
 
     return stats
 
@@ -151,8 +159,8 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
     if _type == 'range':
         try:
             days = datetime_range(timestamp, end_timestamp, int(str(steps).replace(',', '')))
-        except Exception as err:  # pylint: disable=broad-except
-            return f"Invalid time range {err}"
+        except ValueError as err:
+            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}") from err
         results = {}
         for day in days:
             results[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
@@ -180,8 +188,8 @@ def get_stats(timestamp: str, end_timestamp: str = None, _type: str = 'date', st
     if _type == 'series':
         try:
             days = datetime_range(timestamp, end_timestamp, int(str(steps).replace(',', '')))
-        except Exception as err:  # pylint: disable=broad-except
-            return f"Invalid time range {err}"
+        except ValueError as err:
+            raise HTTPException(status_code=400, detail=f"Invalid time range : {err}") from err
         results = {}
         for day in days:
             results[day] = gibs(str(day), str(layer), str(colormap), str(bbox).replace(' ', ''), int(bins))
