@@ -21,7 +21,7 @@ pandas = "^1.4.1"
 beautifulsoup4 = "^4.10.0"
 starlette = "^0.25"
 xarray = "^2023.1"
-fastapi = "^0.92"
+fastapi = ">=0.92,<0.94"
 uvicorn = "^0.20"
 lxml = "^4.9.1"
 
